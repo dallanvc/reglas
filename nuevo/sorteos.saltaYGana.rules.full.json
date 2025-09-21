@@ -1,0 +1,163 @@
+{
+  "version": "1.0",
+  "name": "sorteos.saltaYGana.rules.full",
+  "defaults": {
+    "rows": 4,
+    "durations": {
+      "acumulacion": 6
+    },
+    "hours": {
+      "acumulacion": { "start": "00:00", "end": "23:59:59" },
+      "canje":       { "start": "00:00", "end": "01:09:59" },
+      "sorteo":      { "start": "18:00", "end": "02:59:59" }
+    },
+    "canje": { "minimo": 5, "maximo": 500 },
+    "equivalenciasTabla": [
+      { "minPuntos": 500,  "opciones": 5  },
+      { "minPuntos": 750,  "opciones": 10 },
+      { "minPuntos": 1000, "opciones": 20 },
+      { "minPuntos": 1500, "opciones": 50 },
+      { "minPuntos": 2000, "opciones": 75 },
+      { "minPuntos": 2300, "opciones": 100 },
+      { "minPuntos": 2500, "opciones": 125 },
+      { "minPuntos": 3000, "opciones": 200 },
+      { "minPuntos": 3500, "opciones": 300 },
+      { "minPuntos": 4000, "opciones": 400 }
+    ],
+    "excedenteEquivalencia": { "puntos": 100, "opcion": 1 },
+    "premios": [
+      { "cantidad": 2, "monto": 250.00 },
+      { "cantidad": 2, "monto": 500.00 },
+      { "cantidad": 2, "monto": 1000.00 },
+      { "cantidad": 1, "monto": 1999.99 },
+      { "cantidad": 1, "monto": 5000.00 }
+    ]
+  },
+  "modes": {
+    "saltaYGana": {
+      "label": "Sorteo Salta y Gana",
+      "hideModeSelector": true,
+      "showSorteos": true,
+      "durations": { "acumulacion": 6 },
+      "hours": {
+        "acumulacion": { "start": "00:00", "end": "23:59:59" },
+        "canje":       { "start": "00:00", "end": "01:09:59" },
+        "sorteo":      { "start": "18:00", "end": "02:59:59" }
+      },
+      "canje": { "minimo": 5, "maximo": 500 },
+      "equivalenciasTabla": [
+        { "minPuntos": 500,  "opciones": 5  },
+        { "minPuntos": 750,  "opciones": 10 },
+        { "minPuntos": 1000, "opciones": 20 },
+        { "minPuntos": 1500, "opciones": 50 },
+        { "minPuntos": 2000, "opciones": 75 },
+        { "minPuntos": 2300, "opciones": 100 },
+        { "minPuntos": 2500, "opciones": 125 },
+        { "minPuntos": 3000, "opciones": 200 },
+        { "minPuntos": 3500, "opciones": 300 },
+        { "minPuntos": 4000, "opciones": 400 }
+      ],
+      "excedenteEquivalencia": { "puntos": 100, "opcion": 1 },
+      "premios": [
+        { "cantidad": 2, "monto": 250.00 },
+        { "cantidad": 2, "monto": 500.00 },
+        { "cantidad": 2, "monto": 1000.00 },
+        { "cantidad": 1, "monto": 1999.99 },
+        { "cantidad": 1, "monto": 5000.00 }
+      ],
+      "etapas": {
+        "PLANIFICADO": {
+          "inicio_dias_antes_acumulacion": 1,
+          "fin_horas_antes_acumulacion": 1
+        },
+        "PRE_EJECUCION": {
+          "inicio_horas_antes_acumulacion": 1
+        },
+        "RECALCULO": {
+          "duracion_minutos": 30,
+          "inicio_justo_despues_acumulacion": true
+        },
+        "CANJES": {
+          "inicio_justo_despues_acumulacion": true,
+          "fin_al_dia_siguiente_hora_fin": "01:09:59"
+        },
+        "VALIDACION": {
+          "inicio_justo_despues_canjes": true,
+          "duracion_igual_sorteo": true
+        },
+        "RESULTADO": {
+          "inicio_justo_despues_validacion": true,
+          "hora_inicio": "03:00:00"
+        },
+        "FINALIZADO": {
+          "inicio_justo_despues_resultado": true,
+          "duracion_horas": 3,
+          "hora_fin": "05:59:59"
+        }
+      }
+    }
+  },
+  "schema": {
+    "state": {
+      "etapaAcumulacion": { "fields": ["fechaInicio", "fechaFin", "horaInicio", "horaFin"] },
+      "etapaSorteo1":     { "fields": ["fechaInicio","fechaFin","horaInicio","horaFin"] },
+      "etapaCanje1":      { "fields": ["fechaInicio", "fechaFin", "horaInicio", "horaFin"] }
+    },
+    "params": { "seed": { "firstAcumulacionStart": "YYYY-MM-DD" } }
+  },
+  "logic": {
+    "acumulacion": [
+      {
+        "target": "state.etapaAcumulacion[i].fechaInicio",
+        "value": { "if":[ { "==":[ "i",0 ] }, { "get":"params.seed.firstAcumulacionStart" }, 
+        { "addDays":["state.etapaAcumulacion[i-1].fechaFin", 1] } ] } },
+
+      {
+        "target": "state.etapaAcumulacion[i].fechaFin",
+        "value": { "addDays": [ "state.etapaAcumulacion[i].fechaInicio",
+          { "get": "defaults.durations.acumulacion" } ] }
+      },
+      { "op": "setHoursFromFirst", "args": ["state.etapaAcumulacion",
+        { "get": "defaults.hours.acumulacion.start" },
+        { "get": "defaults.hours.acumulacion.end" } ] }
+    ],
+
+    "sorteo1": [
+      {
+        "target": "state.etapaSorteo1[i].fechaInicio",
+        "value": { "addDays": [ "state.etapaAcumulacion[i].fechaFin", 1 ] }
+      },
+      {
+        "target": "state.etapaSorteo1[i].fechaFin",
+        "value": { "addDays": [ "state.etapaSorteo1[i].fechaInicio", 1 ] }
+      },
+      {
+        "target": "state.etapaSorteo1[i].horaInicio",
+        "value": { "get": "defaults.hours.sorteo.start" }
+      },
+      {
+        "target": "state.etapaSorteo1[i].horaFin",
+        "value": { "get": "defaults.hours.sorteo.end" }
+      }
+    ],
+
+    "canje1": [
+      {
+        "target": "state.etapaCanje1[i].fechaInicio",
+        "value": { "addDays": [ "state.etapaAcumulacion[i].fechaFin", 1 ] }
+      },
+      {
+        "target": "state.etapaCanje1[i].fechaFin",
+        "value": { "addDays": [ "state.etapaCanje1[i].fechaInicio", 1 ] }
+      },
+      {
+        "target": "state.etapaCanje1[i].horaInicio",
+        "value": { "get": "defaults.hours.canje.start" }
+      },
+      {
+        "target": "state.etapaCanje1[i].horaFin",
+        "value": { "get": "defaults.hours.canje.end" }
+      }
+    ]
+  }
+}
